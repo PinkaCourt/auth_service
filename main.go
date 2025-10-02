@@ -2,17 +2,14 @@ package main
 
 import (
 	"auth-service/internal/handlers"
+	"auth-service/internal/repository"
+	//"log" // Используем log для более информативного вывода
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jmoiron/sqlx"
+	//	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
-
-type User struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
-}
 
 type RequestData struct {
 	Login    string `json:"login"`
@@ -21,46 +18,39 @@ type RequestData struct {
 
 func main() {
 	println("Server OPEN")
+
+	repository.ConnectDB()
+
+	defer repository.DB.Close()
+
+	repository.CreateUsersTable()
+
 	defer println("Server CLOSE")
+
 	r := chi.NewRouter()
 
-	connectBD()
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("i'm root"))
-	})
-
+	r.Get("/", handlers.RootHandler)
 	r.Post("/register", handlers.Register)
-
-	r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
-
-		//Пользователь логинится → сравнивайте хеш из БД с введенным паролем через bcrypt.CompareHashAndPassword.
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("login"))
-	})
+	r.Get("/login", handlers.LoginHandler)
 
 	http.ListenAndServe(":3333", r)
-
 }
 
-func connectBD() {
+// todo! Репозиторий для работы с БД
 
-	db, err := sqlx.Open("sqlite", "test.db")
+func AddUser(login string, pass []byte) {
+	checkLogin(login) // todo! если не проходит то не регистрируем
+	addUserToBD(login, pass)
 
-	if err != nil {
+	println(login, "AddUser-OK")
+}
 
-		println("Не удалось открыть подключение:", err)
-	}
+func addUserToBD(login string, pass []byte) {
+	println("repository.addUserToBD: Имитация записи в БД для пользователя", login)
+}
 
-	defer db.Close()
+func checkLogin(login string) {
+	println("repository.checkLogin: Имитация проверки логина", login, "в базе.")
 
-	err = db.Ping()
-	if err != nil {
-
-		println("Не удалось подключиться к базе:", err)
-	}
-	println("Подключено к SQLite!")
-
+	// CheckUsersLoginInTable(requestData.Login) //todo!
 }

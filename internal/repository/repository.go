@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/jmoiron/sqlx"
@@ -14,7 +15,7 @@ type User struct {
 	Password []byte `db:"password_hash"`
 }
 
-var DB *sqlx.DB // Глобальная переменная для подключения к БД, но теперь она живет здесь
+var DB *sqlx.DB
 
 func ConnectDB() {
 	var err error
@@ -30,7 +31,6 @@ func ConnectDB() {
 	log.Println("Подключено к SQLite!")
 }
 
-// CreateUsersTable создает таблицу пользователей, если она не существует
 func CreateUsersTable() {
 	schema := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -45,6 +45,17 @@ func CreateUsersTable() {
 		return
 	}
 	log.Println("Таблица 'users' успешно проверена/создана.")
+}
+
+// для удаления кривой таблицы
+func DeleteUsersTable() {
+	schema := `DROP TABLE IF EXISTS users`
+	_, err := DB.Exec(schema)
+	if err != nil {
+		log.Fatalf("Не удалось удалить таблицу 'users': %v", err)
+		return
+	}
+	log.Println("Таблица 'users' успешно удалена")
 }
 
 func CheckUserExists(login string) (bool, error) {
@@ -74,6 +85,7 @@ func RegisterUser(login string, passwordHash []byte) error {
 	if exists {
 		println("Пользователь с таким логином уже существует")
 		// log.New("Пользователь с таким логином уже существует", nil)
+		return errors.New("пользователь с таким логином уже существует")
 	}
 
 	// Создаем пользователя и вставляем в БД

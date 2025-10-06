@@ -29,7 +29,7 @@ func main() {
 
 	r.Get("/", handlers.RootHandler)
 	r.Post("/register", handlers.Register)
-	r.Get("/login", handlers.LoginHandler)
+	r.Post("/login", handlers.LoginHandler)
 
 	http.ListenAndServe(":3333", r)
 }

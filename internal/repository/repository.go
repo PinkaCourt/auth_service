@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log"
 
+	"bytes"
+
 	"github.com/jmoiron/sqlx"
 	_ "modernc.org/sqlite"
 )
@@ -38,7 +40,7 @@ func CreateUsersTable() {
 		login TEXT NOT NULL UNIQUE,
 		password_hash BLOB NOT NULL
 	);`
-	// schema := `DROP TABLE IF EXISTS users`
+
 	_, err := DB.Exec(schema)
 	if err != nil {
 		log.Fatalf("Не удалось создать таблицу 'users': %v", err)
@@ -59,14 +61,19 @@ func DeleteUsersTable() {
 }
 
 func CheckUserExists(login string) (bool, error) {
-	// todo разобраться
+	// todo! разобраться
+
+	// 	var exists bool
+	// const query = "SELECT EXISTS(SELECT 1 FROM users WHERE login=$1)"
+
+	// err := DB.Get(&exists, query, login)
+
 	var placeholder int
 	query := "SELECT 1 FROM users WHERE login = ? LIMIT 1"
 
 	err := DB.Get(&placeholder, query, login)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Это не ошибка, а нормальный результат - пользователя нет
 			return false, nil
 		}
 
@@ -74,6 +81,35 @@ func CheckUserExists(login string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func CheckPassExists(login string, passwordHash []byte) (bool, error) {
+	var user = User{}
+
+	// Выбираем только те поля, которые нам нужны для проверки.
+	// В данном случае - только хэш пароля.
+	const query = "SELECT password_hash FROM users WHERE login = ? LIMIT 1"
+
+	err := DB.Get(&user, query, login)
+
+	log.Printf("Checking user '%s', err: %v", login, err)
+
+	if err != nil {
+
+		return false, err
+	}
+
+	// 4. СРАВНИВАЕМ ХЭШИ ПАРОЛЕЙ
+	// Пользователь найден, теперь 'user.Password' содержит хэш из базы.
+	// Слайсы байт ([]byte) нужно сравнивать с помощью bytes.Equal.
+	// Простое сравнение `user.Password == passwordHash` не будет работать правильно.
+	if bytes.Equal(user.Password, passwordHash) {
+
+		return true, nil
+	}
+
+	// Хэши не совпали
+	return false, nil
 }
 
 // RegisterUser регистрирует нового пользователя в БД

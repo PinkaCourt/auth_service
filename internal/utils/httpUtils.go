@@ -21,11 +21,11 @@ func SendError(w http.ResponseWriter, status int, message string) {
 	json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
-func IsJSONContentType(contentType string) bool {
+func isJSONContentType(contentType string) bool {
 	return contentType == "application/json"
 }
 
-func DataValidator(Login string, Password string) error {
+func dataValidator(Login string, Password string) error {
 	if Login == "" {
 		return errors.New("логин не может быть пустым")
 	}
@@ -41,7 +41,7 @@ func DataValidator(Login string, Password string) error {
 	return nil
 }
 
-func ParseRequestBody(body io.Reader) (*RegisterRequest, error) {
+func parseRequestBody(body io.Reader) (*RegisterRequest, error) {
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		return nil, errors.New("ошибка чтения тела запроса")
@@ -64,4 +64,29 @@ func PasswordHash(password string) ([]byte, error) {
 	bufPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	return bufPass, err
+}
+
+// todo! принимать и ответчик что б сразу передавать код ошибки в ответ
+func CheckRequest(r *http.Request) (*RegisterRequest, error) {
+
+	contentType := r.Header.Get("Content-Type")
+	if !isJSONContentType(contentType) {
+		return nil, errors.New("не корректный contentType")
+	}
+
+	requestData, bodyError := parseRequestBody(r.Body)
+
+	if bodyError != nil {
+		return nil, errors.New(bodyError.Error())
+
+	}
+
+	errData := dataValidator(requestData.Login, requestData.Password)
+
+	if errData != nil {
+		return nil, errors.New(errData.Error())
+	}
+
+	return requestData, nil
+
 }

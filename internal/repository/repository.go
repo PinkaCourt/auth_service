@@ -104,7 +104,6 @@ func CheckPassExists(login string, passwordHash []byte) (bool, error) {
 	// Слайсы байт ([]byte) нужно сравнивать с помощью bytes.Equal.
 	// Простое сравнение `user.Password == passwordHash` не будет работать правильно.
 	if bytes.Equal(user.Password, passwordHash) {
-
 		return true, nil
 	}
 

@@ -7,30 +7,12 @@ import (
 	"net/http"
 )
 
-// todo! проверить все хттп статусы
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
-	//todo! проверки как в регистрации убрать
-
-	contentType := r.Header.Get("Content-Type")
-	if !utils.IsJSONContentType(contentType) {
-		utils.SendError(w, http.StatusUnsupportedMediaType, "требуется заголовок Content-Type: application/json")
-		return
-	}
-
-	requestData, bodyError := utils.ParseRequestBody(r.Body)
+	requestData, bodyError := utils.CheckRequest(r)
 
 	if bodyError != nil {
-
 		utils.SendError(w, http.StatusBadRequest, bodyError.Error())
-		return
-	}
-
-	errData := utils.DataValidator(requestData.Login, requestData.Password)
-
-	if errData != nil {
-
-		utils.SendError(w, http.StatusBadRequest, errData.Error())
 		return
 	}
 
@@ -61,11 +43,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.SendError(w, http.StatusConflict, err.Error())
 	}
-
+	//todo!!!!!
 	if !isEqual {
 		err := errors.New("неверный пароль")
-
-		utils.SendError(w, http.StatusUnauthorized, err.Error())
+		utils.SendError(w, http.StatusUnauthorized, err.Error()) //todo!
 	} else {
 		w.Write([]byte("login"))
 	}

@@ -9,25 +9,15 @@ import (
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	contentType := r.Header.Get("Content-Type")
-	if !utils.IsJSONContentType(contentType) {
-		utils.SendError(w, http.StatusUnsupportedMediaType, "требуется заголовок Content-Type: application/json")
-		return
-	}
+	requestData, bodyError := utils.CheckRequest(r)
 
-	requestData, bodyError := utils.ParseRequestBody(r.Body)
+	// if errData != nil {
 
+	// 	utils.SendError(w, http.StatusBadRequest, errData.Error())
+	// 	return
+	// }
 	if bodyError != nil {
-
 		utils.SendError(w, http.StatusBadRequest, bodyError.Error())
-		return
-	}
-
-	errData := utils.DataValidator(requestData.Login, requestData.Password)
-
-	if errData != nil {
-
-		utils.SendError(w, http.StatusBadRequest, errData.Error())
 		return
 	}
 
